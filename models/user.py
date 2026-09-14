@@ -2,93 +2,74 @@ import hashlib
 import json
 import os
 
-from utils.validators import not_empty, valid_email
-
-
+# Path to the JSON database file
 USERS_FILE = "data/users.json"
 
-
+# This is the main user class
 class User:
-    def __init__(self, user_id, username, email, password_hash):
-        self.user_id = user_id
+    def __init__(self, username, password, role="User"):
         self.username = username
-        self.email = email
-        self.password_hash = password_hash
+        self.password_hash = self._hash_password(password) # Securely hash the password using SHA-256 for data protection (turns it into mixed words and letters)
+        self.role = role # Supports role-based access control ("Admin" or "User")
 
-    def __str__(self):
-        return f"{self.user_id} - {self.username}"
+    @staticmethod
+    # Transforms plain text passwords into a secure hexadecimal hash string.
+    def _hash_password(password):
+        return hashlib.sha256(password.encode()).hex_digest() if hasattr(hashlib.sha256(password.encode()), 'hex_digest') else hashlib.sha256(password.encode()).hexdigest()
+    
+    # This validates an incoming password to the stored hash.
+    def check_password(self, password):
+        return self.password_hash == self._hash_password(password)
+    
+    # Serializes the User object into a dictionary for JSON storage.
+    def to_dict(self):
+        return {
+            "username": self.username,
+            "password_hash": self.password_hash,
+            "role": self.role
+        }
+
+    # Deserializes dictionary records from JSON back into a User object.
+    @classmethod
+    def from_dict(cls, data):
+        user = cls(data["username"], "", data.get("role", "User"))
+        user.password_hash = data["password_hash"]
+        return user
 
 
-def load_users(filepath=USERS_FILE):
-    if not os.path.exists(filepath):
-        return []
-
+# Reads all user records from the JSON storage file into memory.
+def load_users():
+    if not os.path.exists(USERS_FILE):
+        return {}
     try:
-        with open(filepath, "r") as f:
+        with open(USERS_FILE, "r") as f:
             data = json.load(f)
-    except (json.JSONDecodeError, OSError):
-        return []
+            return {username: User.from_dict(info) for username, info in data.items()}
+    except json.JSONDecodeError:
+        return {}
 
-    users = []
-    for item in data:
-        user = User(item["user_id"], item["username"], item["email"], item["password_hash"])
-        users.append(user)
-    return users
-
-
-def save_users(users, filepath=USERS_FILE):
-    folder = os.path.dirname(filepath)
-    if folder and not os.path.exists(folder):
-        os.makedirs(folder)
-
-    data = []
-    for user in users:
-        data.append({
-            "user_id": user.user_id,
-            "username": user.username,
-            "email": user.email,
-            "password_hash": user.password_hash,
-        })
-
-    with open(filepath, "w") as f:
+# Writes the current dictionary of users back to the JSON file.
+def save_users(users):
+    os.makedirs(os.path.dirname(USERS_FILE), exist_ok=True)
+    data = {username: user.to_dict() for username, user in users.items()}
+    with open(USERS_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
+# Handles new user sign-up and prevents duplicate usernames.
+def register_user(username, password, role="User"):
+    users = load_users()
+    if username in users:
+        return False, "Username already exists."
+    users[username] = User(username, password, role)
+    save_users(users)
+    return True, "User registered successfully."
 
-def generate_user_id(users):
-    if not users:
-        return "U001"
-    number = int(users[-1].user_id.replace("U", "")) + 1
-    return f"U{number:03d}"
-
-
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
-
-
-def register_user(username, email, password, filepath=USERS_FILE):
-    if not not_empty(username) or not valid_email(email) or not not_empty(password):
-        return False, "username, valid email and password are required"
-
-    users = load_users(filepath)
-    for user in users:
-        if user.username == username:
-            return False, "username already exists"
-
-    user = User(generate_user_id(users), username.strip(), email.strip(), hash_password(password))
-    users.append(user)
-    save_users(users, filepath)
-    return True, user
-
-
-def login_user(username, password, filepath=USERS_FILE):
-    if not not_empty(username) or not not_empty(password):
-        return False, "username and password are required"
-
-    users = load_users(filepath)
-    password_hash = hash_password(password)
-    for user in users:
-        if user.username == username and user.password_hash == password_hash:
-            return True, user
-
-    return False, "invalid username or password"
-
+# Authenticates a user by verifying their credentials against saved data.
+def login_user(username, password):
+    users = load_users()
+    if username not in users:
+        return False, "User not found."
+    user = users[username]
+    if user.check_password(password):
+        return True, user
+    return False, "Incorrect password."
