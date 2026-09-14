@@ -26,12 +26,25 @@ def print_menu():
 
 
 def register_user():
-    print("Registration is ready to be added later.")
+    from models.user import register_user as create_user
+    username = input("Choose a username: ").strip()
+    password = input("Choose a password: ").strip()
+    role = input("Role (User/Admin) [User]: ").strip() or "User"
+    success, message = create_user(username, password, role)
+    print(message)
 
 
 def login_user():
-    print("Login is ready to be added later.")
-
+    from models.user import login_user as authenticate_user
+    username = input("Username: ").strip()
+    password = input("Password: ").strip()
+    success, result = authenticate_user(username, password)
+    if success:
+        print("Login successful. Welcome,", username)
+        return result
+    else:
+        print(result)
+        return None
 
 def view_events():
     events = list_events(EVENTS_FILE)
