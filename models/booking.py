@@ -1,5 +1,6 @@
 import json
 import random
+from models.event import get_event_by_id, update_event_seats
 
 bookings = []
 booking_count = 0
@@ -67,3 +68,19 @@ def save_bookings(filename="bookings.json"):
 def load_bookings(filename="bookings.json"):
     with open(filename, "r") as f:
         return json.load(f)
+
+
+def create_booking(user_id, event_id, quantity, price, filename="bookings.json"):
+    event = get_event_by_id(event_id)
+    if not event:
+        print("Event not found:", event_id)
+        return None
+
+    booking = Booking(event=event, tickets=quantity, name=user_id)
+    booking.confirm_booking()
+
+    if booking.status == "confirmed":
+        update_event_seats(event_id, -quantity)
+
+    save_bookings(filename)
+    return booking
