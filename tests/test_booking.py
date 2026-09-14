@@ -1,33 +1,36 @@
-import pytest
-
-from models.booking import (
-    create_booking,
-    get_booking_by_id,
-    list_bookings,
-    cancel_booking,
-)
+from models.booking import Booking
 
 
-@pytest.fixture
-def booking_file(tmp_path):
-    return str(tmp_path / "bookings.json")
+def test_confirm_booking():
+    concert = {"name": "Sauti Sol Live", "price": 2500, "seats": 5}
+    b = Booking(concert, 3, "Acey")
+    b.confirm_booking()
+    assert b.status == "confirmed"
+    assert concert["seats"] == 2
+    assert b.total_price == 7500
 
 
-def test_booking_create_list_and_cancel(booking_file):
-    ok, booking = create_booking("U001", "E001", 2, 50, booking_file)
-    assert ok is True
-    assert booking.booking_id == "B001"
-    assert booking.status == "confirmed"
-    assert booking.total_price == 100
+def test_not_enough_seats():
+    concert = {"name": "Nyege Nyege", "price": 4000, "seats": 2}
+    b = Booking(concert, 5, "John")
+    b.confirm_booking()
+    assert b.status == "failed"
+    assert concert["seats"] == 2
 
-    bookings = list_bookings(booking_file)
-    assert len(bookings) == 1
 
-    found = get_booking_by_id("B001", booking_file)
-    assert found is not None
-    assert found.booking_id == "B001"
+def test_cancel_booking():
+    concert = {"name": "Sauti Sol Live", "price": 2500, "seats": 5}
+    b = Booking(concert, 3, "Acey")
+    b.confirm_booking()
+    b.cancel_booking()
+    assert b.status == "cancelled"
+    assert concert["seats"] == 5
 
-    ok, cancelled = cancel_booking("B001", booking_file)
-    assert ok is True
-    assert cancelled.status == "cancelled"
+
+test_confirm_booking()
+test_not_enough_seats()
+test_cancel_booking()
+print("All booking tests passed")
+ 
+
 
