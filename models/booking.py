@@ -19,28 +19,34 @@ class Booking:
         bookings.append(self)
 
     def check_seats(self):
-        if self.event["seats"] >= self.tickets:
-            return True
-        else:
-            return False
+        return self.event.available_seats >= self.tickets
 
     def calculate_price(self):
-        self.total_price = self.event["price"] * self.tickets
+        self.total_price = self.event.price * self.tickets
         return self.total_price
 
     def confirm_booking(self):
         if self.check_seats():
-            self.event["seats"] = self.event["seats"] - self.tickets
+            ok, result = update_event_seats(self.event.event_id, -self.tickets)
+            if not ok:
+                self.status = "failed"
+                print("Could not update seats:", result)
+                return
+            self.event = result  # refreshed event object with updated seat count
             self.calculate_price()
             self.status = "confirmed"
             print("Booking confirmed:", self.booking_id)
         else:
             self.status = "failed"
-            print("Not enough seats for", self.event["name"])
+            print("Not enough seats for", self.event.name)
 
     def cancel_booking(self):
         if self.status == "confirmed":
-            self.event["seats"] = self.event["seats"] + self.tickets
+            ok, result = update_event_seats(self.event.event_id, self.tickets)
+            if not ok:
+                print("Could not update seats:", result)
+                return
+            self.event = result  # refreshed event object with updated seat count
             self.status = "cancelled"
             print("Booking cancelled:", self.booking_id)
         else:
@@ -49,7 +55,7 @@ class Booking:
     def to_dict(self):
         return {
             "booking_id": self.booking_id,
-            "event": self.event["name"],
+            "event": self.event.name,
             "name": self.name,
             "tickets": self.tickets,
             "total_price": self.total_price,
@@ -57,7 +63,7 @@ class Booking:
         }
 
 
-def save_bookings(filename="bookings.json"):
+def save_bookings(filename="booking.json"):
     data = []
     for b in bookings:
         data.append(b.to_dict())
@@ -65,22 +71,22 @@ def save_bookings(filename="bookings.json"):
         json.dump(data, f, indent=2)
 
 
-def load_bookings(filename="bookings.json"):
+def load_bookings(filename="booking.json"):
     with open(filename, "r") as f:
         return json.load(f)
 
 
-def create_booking(user_id, event_id, quantity, price, filename="bookings.json"):
+def create_booking(user_id, event_id, quantity, filename="booking.json"):
     event = get_event_by_id(event_id)
     if not event:
         print("Event not found:", event_id)
-        return None
+        return False, None
 
     booking = Booking(event=event, tickets=quantity, name=user_id)
     booking.confirm_booking()
 
-    if booking.status == "confirmed":
-        update_event_seats(event_id, -quantity)
-
+    if booking.status != "confirmed":
+        return False, booking
+    
     save_bookings(filename)
-    return booking
+    return True, booking

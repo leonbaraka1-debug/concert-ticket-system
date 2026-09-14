@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "booking_id": "B1891",
+    "event": "Most Wanted",
+    "name": "Leon",
+    "tickets": 2,
+    "total_price": 2000,
+    "status": "confirmed"
+  }
+]

@@ -15,7 +15,7 @@ class User:
     @staticmethod
     # Transforms plain text passwords into a secure hexadecimal hash string.
     def _hash_password(password):
-        return hashlib.sha256(password.encode()).hex_digest() if hasattr(hashlib.sha256(password.encode()), 'hex_digest') else hashlib.sha256(password.encode()).hexdigest()
+        return hashlib.sha256(password.encode()).hexdigest()
     
     # This validates an incoming password to the stored hash.
     def check_password(self, password):
@@ -38,35 +38,42 @@ class User:
 
 
 # Reads all user records from the JSON storage file into memory.
-def load_users():
-    if not os.path.exists(USERS_FILE):
+def load_users(filepath=USERS_FILE):
+    if not os.path.exists(filepath):
         return {}
     try:
-        with open(USERS_FILE, "r") as f:
+        with open(filepath, "r") as f:
             data = json.load(f)
             return {username: User.from_dict(info) for username, info in data.items()}
     except json.JSONDecodeError:
         return {}
 
 # Writes the current dictionary of users back to the JSON file.
-def save_users(users):
-    os.makedirs(os.path.dirname(USERS_FILE), exist_ok=True)
-    data = {username: user.to_dict() for username, user in users.items()}
-    with open(USERS_FILE, "w") as f:
-        json.dump(data, f, indent=4)
+def save_users(users, filepath=USERS_FILE):
+    folder = os.path.dirname(filepath)
+
+    if folder:
+        os.makedirs(folder, exist_ok=True)
+
+    data = {
+        username: user.to_dict()
+        for username, user in users.items()
+    }
+
+    with open(filepath, "w") as f:json.dump(data, f, indent=4)
 
 # Handles new user sign-up and prevents duplicate usernames.
-def register_user(username, password, role="User"):
-    users = load_users()
+def register_user(username, password, role="User", filepath=USERS_FILE):
+    users = load_users(filepath)
     if username in users:
         return False, "Username already exists."
     users[username] = User(username, password, role)
-    save_users(users)
+    save_users(users, filepath)
     return True, "User registered successfully."
 
 # Authenticates a user by verifying their credentials against saved data.
-def login_user(username, password):
-    users = load_users()
+def login_user(username, password, filepath=USERS_FILE):
+    users = load_users(filepath)
     if username not in users:
         return False, "User not found."
     user = users[username]

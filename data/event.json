@@ -1,1 +1,10 @@
-[]
+[
+    {
+        "event_id": "E001",
+        "name": "Most Wanted",
+        "date": "9/10/2026",
+        "venue": "Uhuru Gardens",
+        "available_seats": 196,
+        "price": 1000
+    }
+]

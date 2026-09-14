@@ -19,7 +19,7 @@ def admin_required(function):
             print("Please login first.")
             return None
 
-        if self.current_user.role != "admin":
+        if self.current_user.role != "Admin":
             print("Admin access required.")
             return None
 

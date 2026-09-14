@@ -4,6 +4,8 @@ import os
 from models.event import create_event, list_events, search_events
 from models.ticket import create_ticket, cancel_ticket, get_tickets_by_user
 from models.booking import create_booking
+from models.user import register_user as create_user, login_user as authenticate_user
+from utils.decorators import login_required, admin_required
 
 
 EVENTS_FILE = "data/event.json"
@@ -11,140 +13,145 @@ TICKETS_FILE = "data/ticket.json"
 BOOKINGS_FILE = "data/booking.json"
 
 
-def print_menu():
-    print("================================")
-    print("      EVENT TICKET SYSTEM")
-    print("================================")
-    print("1. Register")
-    print("2. Login")
-    print("3. View Events")
-    print("4. Search Events")
-    print("5. Book Ticket")
-    print("6. My Tickets")
-    print("7. Cancel Ticket")
-    print("8. Exit")
+class EventTicketApp:
+    def __init__(self):
+        self.current_user = None
 
+    def print_menu(self):
+        print("================================")
+        print("      EVENT TICKET SYSTEM")
+        print("================================")
+        print("1. Register")
+        print("2. Login")
+        print("3. View Events")
+        print("4. Search Events")
+        print("5. Book Ticket")
+        print("6. My Tickets")
+        print("7. Cancel Ticket")
+        print("8. Exit")
+        print("9. Add Event")
+        if self.current_user:
+            print(f"(Logged in as {self.current_user.username} / {self.current_user.role})")
 
-def register_user():
-    from models.user import register_user as create_user
-    username = input("Choose a username: ").strip()
-    password = input("Choose a password: ").strip()
-    role = input("Role (User/Admin) [User]: ").strip() or "User"
-    success, message = create_user(username, password, role)
-    print(message)
+    def register_user(self):
+        username = input("Choose a username: ").strip()
+        password = input("Choose a password: ").strip()
+        role = input("Role (User/Admin) [User]: ").strip() or "User"
+        success, message = create_user(username, password, role)
+        print(message)
 
-
-def login_user():
-    from models.user import login_user as authenticate_user
-    username = input("Username: ").strip()
-    password = input("Password: ").strip()
-    success, result = authenticate_user(username, password)
-    if success:
-        print("Login successful. Welcome,", username)
-        return result
-    else:
-        print(result)
-        return None
-
-def view_events():
-    events = list_events(EVENTS_FILE)
-    if not events:
-        print("No events found.")
-        return
-
-    for event in events:
-        print(f"{event.event_id} | {event.name} | {event.date} | {event.venue} | seats={event.available_seats}")
-
-
-def search_events_cli():
-    keyword = input("Search by event name, venue or date: ").strip()
-    events = search_events(keyword, EVENTS_FILE)
-    if not events:
-        print("No matching events found.")
-        return
-
-    for event in events:
-        print(f"{event.event_id} | {event.name} | {event.date} | {event.venue} | seats={event.available_seats}")
-
-
-def book_ticket():
-    event_id = input("Event ID: ").strip()
-    user_id = input("User ID: ").strip()
-    quantity = input("Number of tickets: ").strip()
-    price = input("Price per ticket: ").strip()
-
-    ok, booking = create_booking(user_id, event_id, quantity, price, BOOKINGS_FILE)
-    if ok:
-        ok_ticket, ticket = create_ticket(user_id, event_id, TICKETS_FILE)
-        if ok_ticket:
-            print(f"Booked. Booking: {booking.booking_id}. Ticket: {ticket.ticket_id}")
+    def login_user(self):
+        username = input("Username: ").strip()
+        password = input("Password: ").strip()
+        success, result = authenticate_user(username, password)
+        if success:
+            self.current_user = result
+            print("Login successful. Welcome,", username)
         else:
-            print(ticket)
-    else:
-        print(booking)
+            print(result)
 
+    def view_events(self):
+        events = list_events(EVENTS_FILE)
+        if not events:
+            print("No events found.")
+            return
 
-def my_tickets():
-    user_id = input("User ID: ").strip()
-    tickets = get_tickets_by_user(user_id, TICKETS_FILE)
-    if not tickets:
-        print("No tickets found for that user.")
-        return
+        for event in events:
+            print(f"{event.event_id} | {event.name} | {event.date} | {event.venue} | seats={event.available_seats} | price={event.price}")
 
-    for ticket in tickets:
-        print(f"{ticket.ticket_id} | {ticket.event_id} | {ticket.status}")
+    def search_events_cli(self):
+        keyword = input("Search by event name, venue or date: ").strip()
+        events = search_events(keyword, EVENTS_FILE)
+        if not events:
+            print("No matching events found.")
+            return
 
+        for event in events:
+            print(f"{event.event_id} | {event.name} | {event.date} | {event.venue} | seats={event.available_seats} | price={event.price}")
 
-def cancel_ticket_cli():
-    ticket_id = input("Ticket ID: ").strip()
-    ok, result = cancel_ticket(ticket_id, TICKETS_FILE)
-    if ok:
-        print(f"Ticket {ticket_id} cancelled.")
-    else:
-        print(result)
+    @login_required
+    def book_ticket(self):
+        event_id = input("Event ID: ").strip()
+        user_id = self.current_user.username
 
+        try:
+            quantity = int(input("Number of tickets: ").strip())
+        except ValueError:
+            print("Number of tickets must be a whole number.")
+            return
 
-def add_event_cli():
-    name = input("Event name: ").strip()
-    date = input("Event date: ").strip()
-    venue = input("Venue: ").strip()
-    seats = input("Available seats: ").strip()
-
-    ok, result = create_event(name, date, venue, seats, EVENTS_FILE)
-    if ok:
-        print(f"Event created: {result.event_id}")
-    else:
-        print(result)
-
-
-def run_cli():
-    while True:
-        print_menu()
-        choice = input("Pick your hangover spot: ").strip()
-
-        if choice == "1":
-            register_user()
-        elif choice == "2":
-            login_user()
-        elif choice == "3":
-            view_events()
-        elif choice == "4":
-            search_events_cli()
-        elif choice == "5":
-            book_ticket()
-        elif choice == "6":
-            my_tickets()
-        elif choice == "7":
-            cancel_ticket_cli()
-        elif choice == "8":
-            print("(Touch more grass next time you lazy couch grape)!")
-            break
-        elif choice == "9":
-            add_event_cli()
+        ok, booking = create_booking(user_id, event_id, quantity, BOOKINGS_FILE)
+        if ok:
+            ok_ticket, ticket = create_ticket(user_id, event_id, TICKETS_FILE)
+            if ok_ticket:
+                print(f"Booked. Booking: {booking.booking_id}. Ticket: {ticket.ticket_id}")
+            else:
+                print(ticket)
         else:
-            print("Choose a valid number from the menu.")
+            print(booking)
+
+    @login_required
+    def my_tickets(self):
+        user_id = self.current_user.username
+        tickets = get_tickets_by_user(user_id, TICKETS_FILE)
+        if not tickets:
+            print("No tickets found for that user.")
+            return
+
+        for ticket in tickets:
+            print(f"{ticket.ticket_id} | {ticket.event_id} | {ticket.status}")
+
+    @login_required
+    def cancel_ticket_cli(self):
+        ticket_id = input("Ticket ID: ").strip()
+        ok, result = cancel_ticket(ticket_id, TICKETS_FILE)
+        if ok:
+            print(f"Ticket {ticket_id} cancelled.")
+        else:
+            print(result)
+
+    @admin_required
+    def add_event_cli(self):
+        name = input("Event name: ").strip()
+        date = input("Event date: ").strip()
+        venue = input("Venue: ").strip()
+        seats = input("Available seats: ").strip()
+        price = input("Price per ticket: ").strip()
+
+        ok, result = create_event(name, date, venue, seats, price=price, filepath=EVENTS_FILE)
+        if ok:
+            print(f"Event created: {result.event_id}")
+        else:
+            print(result)
+
+    def run(self):
+        while True:
+            self.print_menu()
+            choice = input("Pick your hangover spot: ").strip()
+
+            if choice == "1":
+                self.register_user()
+            elif choice == "2":
+                self.login_user()
+            elif choice == "3":
+                self.view_events()
+            elif choice == "4":
+                self.search_events_cli()
+            elif choice == "5":
+                self.book_ticket()
+            elif choice == "6":
+                self.my_tickets()
+            elif choice == "7":
+                self.cancel_ticket_cli()
+            elif choice == "8":
+                print("(Touch more grass next time you lazy couch grape)!")
+                break
+            elif choice == "9":
+                self.add_event_cli()
+            else:
+                print("Choose a valid number from the menu.")
 
 
 if __name__ == "__main__":
-    run_cli()
-
+    app = EventTicketApp()
+    app.run()

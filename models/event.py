@@ -8,12 +8,13 @@ EVENTS_FILE = "data/event.json"
 
 
 class Event:
-    def __init__(self, event_id, name, date, venue, available_seats):
+    def __init__(self, event_id, name, date, venue, available_seats, price=0):
         self.event_id = event_id
         self.name = name
         self.date = date
         self.venue = venue
         self.available_seats = available_seats
+        self.price = price  # Default price for each ticket, can be modified later if needed
 
     def to_dict(self):
         return {
@@ -22,6 +23,7 @@ class Event:
             "date": self.date,
             "venue": self.venue,
             "available_seats": self.available_seats,
+            "price": self.price,
         }
 
     @staticmethod
@@ -32,10 +34,11 @@ class Event:
             data["date"],
             data["venue"],
             data.get("available_seats", 0),
+            data.get("price", 0)
         )
 
     def __str__(self):
-        return f"{self.event_id} - {self.name} ({self.date}) at {self.venue}"
+        return f"{self.event_id} - {self.name} ({self.date}) at {self.venue} - ${self.price}"
 
 
 def load_events(filepath=EVENTS_FILE):
@@ -70,7 +73,7 @@ def generate_event_id(events):
     return f"E{number:03d}"
 
 
-def create_event(name, date, venue, available_seats, filepath=EVENTS_FILE):
+def create_event(name, date, venue, available_seats, filepath=EVENTS_FILE, price=0):
     if not not_empty(name) or not not_empty(date) or not not_empty(venue):
         return False, "name, date and venue are required"
 
@@ -82,8 +85,16 @@ def create_event(name, date, venue, available_seats, filepath=EVENTS_FILE):
     if seats < 0:
         return False, "available_seats cannot be negative"
 
+    try:
+        price = int(price)
+    except (TypeError, ValueError):
+        return False, "price must be a number"
+
+    if price < 0:
+        return False, "price cannot be negative"
+
     events = load_events(filepath)
-    event = Event(generate_event_id(events), name.strip(), date.strip(), venue.strip(), seats)
+    event = Event(generate_event_id(events), name.strip(), date.strip(), venue.strip(), seats, price)
     events.append(event)
     save_events(events, filepath)
     return True, event
