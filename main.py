@@ -21,17 +21,21 @@ class EventTicketApp:
         print("=========================================")
         print("       EVENT TICKET SYSTEM")
         print("=========================================")
-        print("1. Register")
-        print("2. Login")
-        print("3. View Events")
-        print("4. Search Events")
-        print("5. Book Ticket")
-        print("6. My Tickets")
-        print("7. Cancel Ticket")
-        print("8. Exit")
-        print("9. Add Event")
-        if self.current_user:
+
+        if not self.current_user:
+            print("1. Register")
+            print("2. Login")
+            print("3. Exit")
+        else:
             print(f"(Logged in as {self.current_user.username} / {self.current_user.role})")
+            print("1. View Events")
+            print("2. Search Events")
+            print("3. Book Ticket")
+            print("4. My Tickets")
+            print("5. Cancel Ticket")
+            print("6. Add Event")
+            print("7. Logout")
+            print("8. Exit")
 
     def register_user(self):
         username = input("Choose a username: ").strip()
@@ -129,28 +133,37 @@ class EventTicketApp:
             self.print_menu()
             choice = input("Pick your hangover spot: ").strip()
 
-            if choice == "1":
-                self.register_user()
-            elif choice == "2":
-                self.login_user()
-            elif choice == "3":
-                self.view_events()
-            elif choice == "4":
-                self.search_events_cli()
-            elif choice == "5":
-                self.book_ticket()
-            elif choice == "6":
-                self.my_tickets()
-            elif choice == "7":
-                self.cancel_ticket_cli()
-            elif choice == "8":
-                print("(Touch more grass next time you lazy couch grape)!")
-                break
-            elif choice == "9":
-                self.add_event_cli()
+            if not self.current_user:
+                if choice == "1":
+                    self.register_user()
+                elif choice == "2":
+                    self.login_user()
+                elif choice == "3":
+                    print("(Touch more grass next time you lazy couch grape)!")
+                    break
+                else:
+                    print("Choose a valid number from the menu.")
             else:
-                print("Choose a valid number from the menu.")
-
+                if choice == "1":
+                    self.view_events()
+                elif choice == "2":
+                    self.search_events_cli()
+                elif choice == "3":
+                    self.book_ticket()
+                elif choice == "4":
+                    self.my_tickets()
+                elif choice == "5":
+                    self.cancel_ticket_cli()
+                elif choice == "6":
+                    self.add_event_cli()
+                elif choice == "7":
+                    self.current_user = None
+                    print("Logged out.")
+                elif choice == "8":
+                    print("(Touch more grass next time you lazy couch grape)!")
+                    break
+                else:
+                    print("Choose a valid number from the menu.")
 
 if __name__ == "__main__":
     app = EventTicketApp()
