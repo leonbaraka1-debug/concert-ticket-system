@@ -1,12 +1,12 @@
 import json
 import os
+import getpass
 
 from models.event import create_event, list_events, search_events
 from models.ticket import create_ticket, cancel_ticket, get_tickets_by_user
 from models.booking import create_booking
 from models.user import register_user as create_user, login_user as authenticate_user
 from utils.decorators import login_required, admin_required
-
 
 EVENTS_FILE = "data/event.json"
 TICKETS_FILE = "data/ticket.json"
@@ -18,9 +18,9 @@ class EventTicketApp:
         self.current_user = None
 
     def print_menu(self):
-        print("================================")
-        print("      EVENT TICKET SYSTEM")
-        print("================================")
+        print("=========================================")
+        print("       EVENT TICKET SYSTEM")
+        print("=========================================")
         print("1. Register")
         print("2. Login")
         print("3. View Events")
@@ -35,14 +35,14 @@ class EventTicketApp:
 
     def register_user(self):
         username = input("Choose a username: ").strip()
-        password = input("Choose a password: ").strip()
+        password = getpass.getpass("Choose a password: ").strip()
         role = input("Role (User/Admin) [User]: ").strip() or "User"
         success, message = create_user(username, password, role)
         print(message)
 
     def login_user(self):
         username = input("Username: ").strip()
-        password = input("Password: ").strip()
+        password = getpass.getpass("Password: ").strip()
         success, result = authenticate_user(username, password)
         if success:
             self.current_user = result
@@ -57,7 +57,7 @@ class EventTicketApp:
             return
 
         for event in events:
-            print(f"{event.event_id} | {event.name} | {event.date} | {event.venue} | seats={event.available_seats} | price={event.price}")
+            print(f"{event.event_id} | {event.name} | {event.date} | {event.venue} | seats={event.available_seats}")
 
     def search_events_cli(self):
         keyword = input("Search by event name, venue or date: ").strip()
@@ -67,7 +67,7 @@ class EventTicketApp:
             return
 
         for event in events:
-            print(f"{event.event_id} | {event.name} | {event.date} | {event.venue} | seats={event.available_seats} | price={event.price}")
+            print(f"{event.event_id} | {event.name} | {event.date} | {event.venue} | seats={event.available_seats}")
 
     @login_required
     def book_ticket(self):
