@@ -6,5 +6,21 @@
         "venue": "Uhuru Gardens",
         "available_seats": 196,
         "price": 1000
+    },
+    {
+        "event_id": "E002",
+        "name": "malo",
+        "date": "12/7/2026",
+        "venue": "mali",
+        "available_seats": 93,
+        "price": 500
+    },
+    {
+        "event_id": "E003",
+        "name": "solfest",
+        "date": "27/8/2026",
+        "venue": "ngong road",
+        "available_seats": 200,
+        "price": 1000
     }
 ]

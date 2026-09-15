@@ -8,5 +8,15 @@
         "username": "Leo",
         "password_hash": "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
         "role": "Admin"
+    },
+    "ericktooshy": {
+        "username": "ericktooshy",
+        "password_hash": "703db9dce9f56ef9749830608802290f52559ba286c4e4be556b99941f7f2706",
+        "role": "User"
+    },
+    "yeattooshy": {
+        "username": "yeattooshy",
+        "password_hash": "dd22fe18750d6b62e5eda94dafe0fe5079f3859ee89eda7d23b6932f60787ecb",
+        "role": "Admin"
     }
 }

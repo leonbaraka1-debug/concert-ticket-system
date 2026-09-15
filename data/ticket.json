@@ -4,5 +4,17 @@
         "user_id": "Leon",
         "event_id": "E001",
         "status": "cancelled"
+    },
+    {
+        "ticket_id": "T002",
+        "user_id": "yeattooshy",
+        "event_id": "E002",
+        "status": "active"
+    },
+    {
+        "ticket_id": "T003",
+        "user_id": "ericktooshy",
+        "event_id": "E002",
+        "status": "cancelled"
     }
 ]
