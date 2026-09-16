@@ -1,1 +1,5 @@
 _pycache_/ *.pyc *.pyo
+__pycache__/
+*.pyc
+__pycache__/
+*.pyc
