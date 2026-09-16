@@ -1,10 +1,10 @@
 [
   {
-    "booking_id": "B1891",
-    "event": "Most Wanted",
-    "name": "Leon",
+    "booking_id": "B1953",
+    "event": "Sol fest",
+    "name": "Leone",
     "tickets": 2,
-    "total_price": 2000,
+    "total_price": 6000,
     "status": "confirmed"
   }
 ]

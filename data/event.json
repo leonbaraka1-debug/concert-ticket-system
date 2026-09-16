@@ -6,5 +6,13 @@
         "venue": "Uhuru Gardens",
         "available_seats": 196,
         "price": 1000
+    },
+    {
+        "event_id": "E002",
+        "name": "Sol fest",
+        "date": "9/10/2026",
+        "venue": "Archives",
+        "available_seats": 198,
+        "price": 3000
     }
 ]
