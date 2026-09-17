@@ -2,6 +2,8 @@ import json
 import os
 
 from utils.validators import not_empty
+from models.event import update_event_seats
+
 
 TICKETS_FILE = "data/ticket.json"
 
@@ -54,7 +56,16 @@ def save_tickets(tickets, filepath=TICKETS_FILE):
 
 
 def generate_ticket_id(tickets):
-    return "T" + str(len(tickets) + 1).zfill(3)
+    # base the next id on the highest existing numeric id, not the count,
+    # so cancelled/removed tickets can't cause a collision
+    max_num = 0
+    for t in tickets:
+        try:
+            num = int(t.ticket_id[1:])
+            max_num = max(max_num, num)
+        except (ValueError, IndexError):
+            continue
+    return "T" + str(max_num + 1).zfill(3)
 
 
 def create_ticket(user_id, event_id, filepath=TICKETS_FILE):
@@ -88,15 +99,26 @@ def get_ticket_by_id(ticket_id, filepath=TICKETS_FILE):
     return None
 
 
-def cancel_ticket(ticket_id, filepath=TICKETS_FILE):
+def cancel_ticket(ticket_id, user_id, filepath=TICKETS_FILE):
+    """
+    user_id is now required: only the ticket's owner can cancel it.
+    """
     tickets = load_tickets(filepath)
 
     for t in tickets:
         if t.ticket_id == ticket_id:
+            if t.user_id != user_id:
+                return False, "you do not have permission to cancel this ticket"
             if t.status == "cancelled":
                 return False, "ticket already cancelled"
+
             t.status = "cancelled"
             save_tickets(tickets, filepath)
+
+            ok, result = update_event_seats(t.event_id, 1)
+            if not ok:
+                return True, f"ticket cancelled, but seat restore failed: {result}"
+
             return True, t
 
     return False, "ticket not found"
@@ -109,5 +131,5 @@ if __name__ == "__main__":
 
     print(get_tickets_by_user("U001"))
 
-    ok, result = cancel_ticket(ticket.ticket_id)
+    ok, result = cancel_ticket(ticket.ticket_id, "U001")
     print(ok, result)

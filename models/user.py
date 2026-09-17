@@ -16,11 +16,11 @@ class User:
     # Transforms plain text passwords into a secure hexadecimal hash string.
     def _hash_password(password):
         return hashlib.sha256(password.encode()).hexdigest()
-    
+
     # This validates an incoming password to the stored hash.
     def check_password(self, password):
         return self.password_hash == self._hash_password(password)
-    
+
     # Serializes the User object into a dictionary for JSON storage.
     def to_dict(self):
         return {
@@ -60,16 +60,32 @@ def save_users(users, filepath=USERS_FILE):
         for username, user in users.items()
     }
 
-    with open(filepath, "w") as f:json.dump(data, f, indent=4)
+    with open(filepath, "w") as f:
+        json.dump(data, f, indent=4)
 
 # Handles new user sign-up and prevents duplicate usernames.
-def register_user(username, password, role="User", filepath=USERS_FILE):
+# NOTE: role is intentionally NOT a parameter here. Every account created
+# through this function is a regular "User" — there is no way for a caller
+# (including the CLI) to self-assign "Admin" at registration time.
+def register_user(username, password, filepath=USERS_FILE):
     users = load_users(filepath)
     if username in users:
         return False, "Username already exists."
-    users[username] = User(username, password, role)
+    users[username] = User(username, password, role="User")
     save_users(users, filepath)
     return True, "User registered successfully."
+
+# Separate, explicit path for promoting a user to Admin. This should only
+# ever be called by trusted/internal code (e.g. an existing admin's CLI
+# menu option, or a one-off setup script) — never exposed on the public
+# registration flow.
+def promote_to_admin(username, filepath=USERS_FILE):
+    users = load_users(filepath)
+    if username not in users:
+        return False, "User not found."
+    users[username].role = "Admin"
+    save_users(users, filepath)
+    return True, f"{username} promoted to Admin."
 
 # Authenticates a user by verifying their credentials against saved data.
 def login_user(username, password, filepath=USERS_FILE):

@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch
 
 from models.ticket import (
     create_ticket,
@@ -13,6 +14,16 @@ def test_file(tmp_path):
     # gives each test its own throwaway json file so they don't mess with
     # the real data or with each other
     return str(tmp_path / "tickets.json")
+
+
+@pytest.fixture(autouse=True)
+def mock_seat_restore():
+    # cancel_ticket() calls update_event_seats() internally; these tests
+    # care about ticket behavior, not event/seat behavior, so keep it
+    # from touching real event.json and assume it always succeeds
+    with patch("models.ticket.update_event_seats") as mock_update:
+        mock_update.return_value = (True, None)
+        yield mock_update
 
 
 def test_create_ticket(test_file):
@@ -55,18 +66,43 @@ def test_get_ticket_by_id_missing(test_file):
 
 def test_cancel_ticket(test_file):
     _, created = create_ticket("U001", "E001", test_file)
-    ok, cancelled = cancel_ticket(created.ticket_id, test_file)
+    ok, cancelled = cancel_ticket(created.ticket_id, "U001", test_file)
     assert ok is True
     assert cancelled.status == "cancelled"
 
 
 def test_cancel_twice_fails(test_file):
     _, created = create_ticket("U001", "E001", test_file)
-    cancel_ticket(created.ticket_id, test_file)
-    ok, msg = cancel_ticket(created.ticket_id, test_file)
+    cancel_ticket(created.ticket_id, "U001", test_file)
+    ok, msg = cancel_ticket(created.ticket_id, "U001", test_file)
     assert ok is False
 
 
 def test_cancel_ticket_not_found(test_file):
-    ok, msg = cancel_ticket("T999", test_file)
+    ok, msg = cancel_ticket("T999", "U001", test_file)
     assert ok is False
+
+
+def test_cancel_ticket_wrong_owner_rejected(test_file):
+    """
+    Regression test for bug 3: a user must not be able to cancel
+    someone else's ticket.
+    """
+    _, created = create_ticket("U001", "E001", test_file)
+    ok, msg = cancel_ticket(created.ticket_id, "U002", test_file)
+
+    assert ok is False
+    # the ticket must remain untouched
+    still_there = get_ticket_by_id(created.ticket_id, test_file)
+    assert still_there.status == "active"
+
+
+def test_cancel_ticket_restores_seat(test_file, mock_seat_restore):
+    """
+    Regression test for bug 2: cancelling a ticket must call the event
+    model to give the seat back, not just flip the ticket's status.
+    """
+    _, created = create_ticket("U001", "E001", test_file)
+    cancel_ticket(created.ticket_id, "U001", test_file)
+
+    mock_seat_restore.assert_called_once_with("E001", 1)

@@ -4,7 +4,7 @@ import getpass
 
 from models.event import create_event, list_events, search_events
 from models.ticket import create_ticket, cancel_ticket, get_tickets_by_user
-from models.booking import create_booking
+from models.booking import create_booking, load_bookings
 from models.user import register_user as create_user, login_user as authenticate_user
 from utils.decorators import login_required, admin_required
 
@@ -16,6 +16,8 @@ BOOKINGS_FILE = "data/booking.json"
 class EventTicketApp:
     def __init__(self):
         self.current_user = None
+        # rebuild in-memory bookings from disk so state survives a restart
+        load_bookings(BOOKINGS_FILE)
 
     def print_menu(self):
         print("=========================================")
@@ -40,8 +42,10 @@ class EventTicketApp:
     def register_user(self):
         username = input("Choose a username: ").strip()
         password = getpass.getpass("Choose a password: ").strip()
-        role = input("Role (User/Admin) [User]: ").strip() or "User"
-        success, message = create_user(username, password, role)
+        # role is no longer accepted from the user — every signup is a
+        # regular "User". Admin accounts are granted separately, not
+        # self-selected at registration.
+        success, message = create_user(username, password)
         print(message)
 
     def login_user(self):
@@ -84,15 +88,14 @@ class EventTicketApp:
             print("Number of tickets must be a whole number.")
             return
 
+        # create_booking now creates one Ticket per unit of quantity itself —
+        # do not call create_ticket() again here, that was double-booking
+        # a single extra ticket outside of the actual booking record.
         ok, booking = create_booking(user_id, event_id, quantity, BOOKINGS_FILE)
         if ok:
-            ok_ticket, ticket = create_ticket(user_id, event_id, TICKETS_FILE)
-            if ok_ticket:
-                print(f"Booked. Booking: {booking.booking_id}. Ticket: {ticket.ticket_id}")
-            else:
-                print(ticket)
+            print(f"Booked. Booking: {booking.booking_id}. Tickets: {', '.join(booking.ticket_ids)}")
         else:
-            print(booking)
+            print(booking if isinstance(booking, str) else "Booking failed.")
 
     @login_required
     def my_tickets(self):
@@ -108,7 +111,8 @@ class EventTicketApp:
     @login_required
     def cancel_ticket_cli(self):
         ticket_id = input("Ticket ID: ").strip()
-        ok, result = cancel_ticket(ticket_id, TICKETS_FILE)
+        user_id = self.current_user.username
+        ok, result = cancel_ticket(ticket_id, user_id, TICKETS_FILE)
         if ok:
             print(f"Ticket {ticket_id} cancelled.")
         else:

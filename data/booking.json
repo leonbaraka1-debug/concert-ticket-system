@@ -1,10 +1,18 @@
 [
   {
-    "booking_id": "B1953",
-    "event": "Sol fest",
-    "name": "Leone",
-    "tickets": 2,
-    "total_price": 6000,
-    "status": "confirmed"
+    "booking_id": "B1389",
+    "event_id": "E001",
+    "event": "Most Wanted",
+    "name": "leon",
+    "tickets": 5,
+    "total_price": 5000,
+    "status": "confirmed",
+    "ticket_ids": [
+      "T009",
+      "T010",
+      "T011",
+      "T012",
+      "T013"
+    ]
   }
 ]

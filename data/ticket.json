@@ -10,5 +10,71 @@
         "user_id": "Leone",
         "event_id": "E002",
         "status": "cancelled"
+    },
+    {
+        "ticket_id": "T003",
+        "user_id": "Acey",
+        "event_id": "E001",
+        "status": "active"
+    },
+    {
+        "ticket_id": "T004",
+        "user_id": "Acey",
+        "event_id": "E001",
+        "status": "active"
+    },
+    {
+        "ticket_id": "T005",
+        "user_id": "Acey",
+        "event_id": "E001",
+        "status": "active"
+    },
+    {
+        "ticket_id": "T006",
+        "user_id": "Acey",
+        "event_id": "E003",
+        "status": "cancelled"
+    },
+    {
+        "ticket_id": "T007",
+        "user_id": "Acey",
+        "event_id": "E003",
+        "status": "cancelled"
+    },
+    {
+        "ticket_id": "T008",
+        "user_id": "Acey",
+        "event_id": "E003",
+        "status": "cancelled"
+    },
+    {
+        "ticket_id": "T009",
+        "user_id": "leon",
+        "event_id": "E001",
+        "status": "active"
+    },
+    {
+        "ticket_id": "T010",
+        "user_id": "leon",
+        "event_id": "E001",
+        "status": "active"
+    },
+    {
+        "ticket_id": "T011",
+        "user_id": "leon",
+        "event_id": "E001",
+        "status": "active"
+    },
+    {
+        "ticket_id": "T012",
+        "user_id": "leon",
+        "event_id": "E001",
+        "status": "active"
+    },
+    {
+        "ticket_id": "T013",
+        "user_id": "leon",
+        "event_id": "E001",
+        "status": "active"
     }
 ]

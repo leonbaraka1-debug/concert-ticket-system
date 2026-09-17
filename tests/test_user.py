@@ -31,7 +31,6 @@ def test_register_user(users_file):
     success, msg = register_user(
         "charlie",
         "mypass123",
-        "User",
         filepath=users_file
     )
 
@@ -44,11 +43,29 @@ def test_register_user(users_file):
     success2, msg2 = register_user(
         "charlie",
         "mypass123",
-        "User",
         filepath=users_file
     )
 
     assert not success2
+
+
+def test_register_user_cannot_self_assign_admin(users_file):
+    """
+    Regression test for bug 6: register_user() must not accept a role
+    argument at all, so there is no way for a new signup to become Admin.
+    """
+    register_user("eve", "evepass", filepath=users_file)
+
+    users = load_users(users_file)
+    assert users["eve"].role == "User"
+
+    # confirm the function signature itself has no room for a role —
+    # calling it with a role positionally/by keyword should fail outright
+    with pytest.raises(TypeError):
+        register_user("mallory", "mallorypass", "Admin", filepath=users_file)
+
+    with pytest.raises(TypeError):
+        register_user("mallory2", "mallorypass", role="Admin", filepath=users_file)
 
 
 def test_login_user(users_file):
